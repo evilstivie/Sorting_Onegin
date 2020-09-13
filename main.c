@@ -13,8 +13,17 @@
 
 void free_memory(str *file, size_t lines, char *raw_text) {
     free(raw_text);
-    
     free(file);    
+}
+
+void print_original_text(FILE *outp, char *tx) {
+	while (*tx) {
+		fprintf(outp, "%s\n", tx);
+		while (*tx != '\0') {
+			++tx;
+		}
+		++tx;
+	}
 }
 
 int main(const int argC, const char** argV) {
@@ -38,11 +47,20 @@ int main(const int argC, const char** argV) {
 	FILE *outp;
 	outp = fopen("output1.txt", "w");
 
+	fprintf(outp,"%s", "------Left-Right Sorting------");
+
 	qsort(text, cnt_lines, sizeof(str), cmp_lr);
 	str_output(outp, text, cnt_lines);
 
+	fprintf(outp,"%s", "------Right-Left Sorting------");
+
 	qsort(text, cnt_lines, sizeof(text[0]), cmp_rl);
 	str_output(outp, text, cnt_lines);
+
+	fprintf(outp,"%s", "------Orgiginal Text------");
+
+	print_original_text(outp, raw_text);
+
 
 	fclose(outp);
 	--raw_text;
@@ -54,5 +72,4 @@ int main(const int argC, const char** argV) {
 -> getFileSize -> getFile -> FileToString -> getLines(\n) -> 
 -> arrayOfStructs (pointer, str) -> cmp1 -> cmp2 -> qsort(cmp1) ->
 -> output -> qsort(cmp2) -> output ->
-
 */
