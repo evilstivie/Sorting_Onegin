@@ -1,20 +1,27 @@
+#include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "file.h"
 #include "sort.h"
 
-#ifdef _WIN32
-#include <winsock.h>
-#else
-#include <arpa/inet.h>
-#endif
+/**
+* \brief Free allocated memory
+*/
 
 void free_memory(str *file, size_t lines, char *raw_text) {
     free(raw_text);
     free(file);    
 }
+
+/**
+* \brief Print original text of poem
+*
+* \param outp file to output the text
+* \param tx array of chars 
+*/
 
 void print_original_text(FILE *outp, char *tx) {
 	while (*tx) {
@@ -28,12 +35,19 @@ void print_original_text(FILE *outp, char *tx) {
 
 int main(const int argC, const char** argV) {
 	FILE *file = fopen("onegin.txt", "r");
+	if (ferror(file)) {
+        assert(!"Error while reading the file");
+    }
 
 	size_t text_size = get_file_size(file);
 
-	char *raw_text = calloc(text_size + 2, sizeof(char));
-	raw_text[0] = '\0';
-	++raw_text;
+	char *raw_text = calloc(text_size + 2, sizeof(raw_text[0])); // +2'/0' on top and end
+	if (!raw_text) {
+		assert("Memory allocation failed");
+	}
+
+	raw_text[0] = '\0'; // '\0' on top
+	++raw_text; // move pointer to the start of the text
 
 	get_file(file, raw_text, text_size); 
 	
@@ -42,10 +56,15 @@ int main(const int argC, const char** argV) {
 	int cnt_lines = calc_lines(raw_text);
 	
 	str *text = calloc(cnt_lines, sizeof(str));
+	if (!text) {
+		assert("Memory allocation failed");
+	}
 	procces_raw_text(raw_text, text);
 
-	FILE *outp;
-	outp = fopen("output1.txt", "w");
+	FILE *outp = fopen("output1.txt", "w");
+	if (ferror(outp)) {
+        assert("Error while reading the file");
+    }
 
 	fprintf(outp,"%s", "------Left-Right Sorting------");
 
@@ -60,7 +79,6 @@ int main(const int argC, const char** argV) {
 	fprintf(outp,"%s", "------Orgiginal Text------");
 
 	print_original_text(outp, raw_text);
-
 
 	fclose(outp);
 	--raw_text;
