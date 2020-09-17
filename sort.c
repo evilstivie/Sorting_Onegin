@@ -23,7 +23,7 @@ int cmp(const void *a, const void *b, int mode) {
 
     int i = (mode == 1 ? 0 : nx - 1), j = (mode == 1 ? 0 : ny - 1);
     while (x[i] != '\0' && y[j] != '\0') {
-        if (ispunct(x[i]) || isspace(x[i])) { // :NOTE: isspace()
+        if (ispunct(x[i]) || isspace(x[i])) { 
             i += mode;
             continue;
         }
