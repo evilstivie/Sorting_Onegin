@@ -1,79 +1,71 @@
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #include "file.h"
 #include "sort.h"
 
-int cmp_lr(const void *a, const void *b) {
-	const char *x = ((const str*)a)->line;
-    const char *y = ((const str*)b)->line;
+/**
+* \brief Print original text of poem
+*
+* \param outp file to output the text
+* \param tx array of chars
+*/
 
-    const size_t nx = ((const str*)a)->len;
-    const size_t ny = ((const str*)b)->len;
-    
-    int i, j;
-    for (i = 0, j = 0; i < nx && j < ny;) {
-    	if (ispunct(x[i])) {
-    		++i;
-    		continue;		
-    	}
-    	if (ispunct(y[j])) {
-    		++j;
-    		continue;
-    	}
-
-    	if (x[i] == y[j]) {
-    		++i; ++j;
-    		continue;
-    	}
-
-    	return x[i] < y[j] ? -1 : 1; 
-    }
-
-    if (i == nx && j == ny) {
-        return 0;
-    }
-    return i == nx ? -1 : 1;
+void print_original_text(FILE *outp, char *tx) {
+	while (*tx) {
+		fprintf(outp, "%c", *tx); // :NOTE: toooo slow
+        ++tx;
+		if (*tx == '\0') {
+		    fprintf(outp, "\n");
+			++tx;
+		}
+	}
 }
 
-int cmp_rl(const void *a, const void *b) {
-	const char *x = ((const str*)a)->line;
-    const char *y = ((const str*)b)->line;
+int main(const int argC, const char** argV) {
+	setlocale(LC_ALL, "ru_RU.CP1251");
 
-    const size_t nx = ((const str*)a)->len;
-    const size_t ny = ((const str*)b)->len;
+	char *raw_text = procces_file();
+	size_t cnt_lines = calc_lines(raw_text + 1);
 
-    int i, j;
-    for (i = nx - 1, j = ny - 1; i >= 0 && j >= 0;) {
-    	if (ispunct(x[i]) || isspace(x[i])) {
-    		--i;
-    		continue;		
-    	}
-    	if (ispunct(y[j]) || isspace(y[j])) {
-    	    --j;
-    		continue;
-    	}
-    	if (x[i] < 0 && y[j] < 0) {
-
-    		unsigned short ts1 = 
-    		(((unsigned short)x[i - 1]) << 8u) | (unsigned char)x[i];
-    		unsigned short ts2 = 
-    		(((unsigned short)y[j - 1]) << 8u) | (unsigned char)y[j];
-    		if (ts1 == ts2) {
-    			i -= 2; j -= 2;
-    			continue;
-    		}
-    		return (int)ts1 - ts2;
-    	}
-		
-    	if (x[i] == y[j]) {
-    		--i; --j;
-    		continue;
-    	}
-
-    	return x[i] < y[j] ? -1 : 1; 
+	str *text = calloc(cnt_lines, sizeof(str));
+	if (!text) {
+		fprintf(stderr, "%s\n", "Memory allocation failed");
+        exit(EXIT_FAILURE);
     }
 
-    return i == -1 ? -1 : 1;
+	procces_raw_text(raw_text + 1, text);
+
+	FILE *outp = fopen("output1.txt", "w");
+	if (ferror(outp)) {
+        fprintf(stderr, "%s\n", "Error while opening the file");
+        exit(EXIT_FAILURE);
+    }
+
+	fprintf(outp,"%s \n", "------Left-Right Sorting------");
+
+	qsort(text, cnt_lines, sizeof(str), cmp_lr);
+	str_output(outp, text, cnt_lines);
+
+	fprintf(outp,"%s\n", "------Right-Left Sorting------");
+
+	qsort(text, cnt_lines, sizeof(text[0]), cmp_rl);
+	str_output(outp, text, cnt_lines);
+
+	fprintf(outp,"%s\n", "------Original Text------");
+
+	print_original_text(outp, raw_text + 1);
+
+	fclose(outp);
+
+	free(raw_text);
+    free(text);
 }
+
+
+/*
+-> getFileSize -> getFile -> FileToString -> getLines(\n) ->
+-> arrayOfStructs (pointer, str) -> cmp1 -> cmp2 -> qsort(cmp1) ->
+-> output -> qsort(cmp2) -> output ->
+*/
