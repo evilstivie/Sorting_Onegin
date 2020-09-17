@@ -1,4 +1,5 @@
-#include <locale.h>
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -6,66 +7,64 @@
 #include "sort.h"
 
 /**
-* \brief Print original text of poem
+* \brief Comparator for sorting in +1 and -1 mode
 *
-* \param outp file to output the text
-* \param tx array of chars
+* \param a first string
+* \param b second string
+* \param mode The way of sorting str
 */
 
-void print_original_text(FILE *outp, char *tx) {
-	while (*tx) {
-		fprintf(outp, "%c", *tx); // :NOTE: toooo slow
-        ++tx;
-		if (*tx == '\0') {
-		    fprintf(outp, "\n");
-			++tx;
-		}
-	}
-}
+int cmp(const void *a, const void *b, int mode) {
+    const unsigned char *x = ((const str*)a)->line;
+    const unsigned char *y = ((const str*)b)->line;
 
-int main(const int argC, const char** argV) {
-	setlocale(LC_ALL, "ru_RU.CP1251");
+    const size_t nx = ((const str*)a)->len;
+    const size_t ny = ((const str*)b)->len;
 
-	char *raw_text = procces_file();
-	size_t cnt_lines = calc_lines(raw_text + 1);
+    int i = (mode == 1 ? 0 : nx - 1), j = (mode == 1 ? 0 : ny - 1);
+    while (x[i] != '\0' && y[j] != '\0') {
+        if (ispunct(x[i]) || isspace(x[i])) { // :NOTE: isspace()
+            i += mode;
+            continue;
+        }
+        if (ispunct(y[j] )|| isspace(y[j])) {
+            j += mode;
+            continue;
+        }
 
-	str *text = calloc(cnt_lines, sizeof(str));
-	if (!text) {
-		fprintf(stderr, "%s\n", "Memory allocation failed");
-        exit(EXIT_FAILURE);
+        if (x[i] == y[j]) {
+            i += mode;
+            j += mode;
+            continue;
+        }
+
+        return x[i] < y[j] ? -1 : 1;
     }
 
-	procces_raw_text(raw_text + 1, text);
-
-	FILE *outp = fopen("output1.txt", "w");
-	if (ferror(outp)) {
-        fprintf(stderr, "%s\n", "Error while opening the file");
-        exit(EXIT_FAILURE);
+    if (i == nx && j == ny) {
+        return 0;
     }
-
-	fprintf(outp,"%s \n", "------Left-Right Sorting------");
-
-	qsort(text, cnt_lines, sizeof(str), cmp_lr);
-	str_output(outp, text, cnt_lines);
-
-	fprintf(outp,"%s\n", "------Right-Left Sorting------");
-
-	qsort(text, cnt_lines, sizeof(text[0]), cmp_rl);
-	str_output(outp, text, cnt_lines);
-
-	fprintf(outp,"%s\n", "------Original Text------");
-
-	print_original_text(outp, raw_text + 1);
-
-	fclose(outp);
-
-	free(raw_text);
-    free(text);
+    return i == nx ? -1 : 1;
 }
 
-
-/*
--> getFileSize -> getFile -> FileToString -> getLines(\n) ->
--> arrayOfStructs (pointer, str) -> cmp1 -> cmp2 -> qsort(cmp1) ->
--> output -> qsort(cmp2) -> output ->
+/**
+* \brief Comparator for left to right sorting
+*
+* \param a first string
+* \param b second string
 */
+
+int cmp_lr(const void *a, const void *b) { // :NOTE: copypaste
+    return cmp(a, b, 1);
+}
+
+/**
+* \brief Comparator for right to left sorting
+*
+* \param a first string
+* \param b second string
+*/
+
+int cmp_rl(const void *a, const void *b) {
+    return cmp(a, b, -1);
+}
