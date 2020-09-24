@@ -9,8 +9,8 @@
 */
 
 typedef struct {
-	char *line;
-	size_t len;
+    char *line;
+    size_t len;
 } str;
 
 size_t get_file_size(FILE *file);
@@ -21,7 +21,7 @@ void str_output(FILE *outp, str *text, int cnt);
 
 size_t calc_lines(const char *inp);
 
-void procces_raw_text(char *raw_text, str *text);
+str* procces_raw_text(char *raw_text, size_t cnt_lines);
 
 char* procces_file();
 
