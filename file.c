@@ -11,13 +11,13 @@
 */
 
 size_t calc_lines(const char *inp) {
-	assert(inp);
+    assert(inp);
 
-	size_t cnt = 1; // Empty file has 1 line
-	while (*inp) {
-		cnt += (*(inp++) == '\n');
-	}
-	return cnt;
+    size_t cnt = 1; // Empty file has 1 line
+    while (*inp) {
+        cnt += (*(inp++) == '\n');
+    }
+    return cnt;
 }
 
 /**
@@ -29,26 +29,33 @@ size_t calc_lines(const char *inp) {
 * \param text text to fill
 */
 
-void procces_raw_text(char *raw_text, str *text) {
-	assert(raw_text);
+str* procces_raw_text(char *raw_text, size_t cnt_lines) {
+    assert(raw_text);
 
-	size_t ind = 0;
-	text[0].line = raw_text; // set first element to the start of raw_text
-	text[0].len = 0; // initialize the length
-	
-	while (*raw_text) {
-		if (*raw_text == '\n') {
-			++ind;
-			text[ind].line = raw_text + 1; // skip '\n'
-			text[ind].len = 0; // initialize the length
+    str *text = calloc(cnt_lines, sizeof(str));
+    if (!text) {
+        assert(!"Memory allocation failed");
+    }
 
-			*raw_text = '\0';
-		} else {
-			++text[ind].len;
-		}
+    size_t ind = 0;
+    text[0].line = raw_text; // set first element to the start of raw_text
+    text[0].len = 0; // initialize the length
 
-		++raw_text;
-	}
+    while (*raw_text) {
+        if (*raw_text == '\n') {
+            ++ind;
+            text[ind].line = raw_text + 1; // skip '\n'
+            text[ind].len = 0; // initialize the length
+
+            *raw_text = '\0';
+        } else {
+            ++text[ind].len;
+        }
+
+        ++raw_text;  // strchr
+    }
+
+    return text;
 }
 
 /**
@@ -56,11 +63,13 @@ void procces_raw_text(char *raw_text, str *text) {
 */
 
 size_t get_file_size(FILE *file) { //:OPT: fstat
-	long cur_pos = ftell(file);
-	fseek(file, 0, SEEK_END);
-	long result = ftell(file);
-	fseek(file, cur_pos, SEEK_SET);
-	return result;
+    long cur_pos = ftell(file);
+    fseek(file, 0, SEEK_END);
+
+    long result = ftell(file);
+    fseek(file, cur_pos, SEEK_SET);
+
+    return result;
 }
 
 /**
@@ -68,11 +77,12 @@ size_t get_file_size(FILE *file) { //:OPT: fstat
 */
 
 void get_file(FILE *file, char *raw_text, size_t text_size) {
-	fread(raw_text, sizeof(raw_text[0]), text_size, file);
-	if (ferror(file)) {
-		fprintf(stderr, "%s\n", "Error while reading the file");
+    fread(raw_text, sizeof(raw_text[0]), text_size, file);
+
+    if (ferror(file)) {
+        fprintf(stderr, "%s\n", "Error while reading the file");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 /**
@@ -80,30 +90,28 @@ void get_file(FILE *file, char *raw_text, size_t text_size) {
 */
 
 void str_output(FILE *outp, str *text, int cnt) {
-	for (int i = 0; i < cnt; ++i, ++text) {
-		fprintf(outp,"%s\n", (text->line));
-	}
+    for (int i = 0; i < cnt; ++i, ++text) {
+        fprintf(outp,"%s\n", (text->line));
+    }
 }
 
 char* procces_file() {
-	FILE *file = fopen("onegin.txt", "r"); // not binary mode for ignoring '\r'
-	if (ferror(file)) {
-        fprintf(stderr, "%s\n", "Error while opening the file");
-        exit(EXIT_FAILURE);
+    FILE *file = fopen("onegin.txt", "r"); // not binary mode for ignoring '\r'
+    if (ferror(file)) {
+        assert(!"Error while reading the file");
     }
 
-	size_t text_size = get_file_size(file);
+    size_t text_size = get_file_size(file);
 
-	char *raw_text = calloc(text_size + 2, sizeof(raw_text[0])); // +2'/0' on top and end
-	if (!raw_text) {
-		fprintf(stderr, "%s\n", "Memory allocation failed");
-        exit(EXIT_FAILURE);
-	}
+    char *raw_text = calloc(text_size + 2, sizeof(raw_text[0])); // +2'/0' on top and end
+    if (!raw_text) {
+        assert(!"Memory allocation failed");
+    }
 
-	raw_text[0] = '\0'; // '\0' on top
+    raw_text[0] = '\0'; // '\0' on top
 
-	get_file(file, raw_text + 1, text_size);
-	fclose(file);
+    get_file(file, raw_text + 1, text_size);
+    fclose(file);
 
-	return raw_text;
+    return raw_text;
 }
