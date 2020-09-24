@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,57 +13,52 @@
 * \param tx array of chars
 */
 
-void print_original_text(FILE *outp, char *tx) {
-	while (*tx) {
-		fprintf(outp, "%c", *tx); // :NOTE: toooo slow
-        ++tx;
-		if (*tx == '\0') {
-		    fprintf(outp, "\n");
-			++tx;
-		}
-	}
-}
+void print_original_text(FILE *outp, char *tx);
 
 int main(const int argC, const char** argV) {
-	setlocale(LC_ALL, "ru_RU.CP1251");
+    setlocale(LC_ALL, "ru_RU.CP1251");
 
-	char *raw_text = procces_file();
-	size_t cnt_lines = calc_lines(raw_text + 1);
+    char *raw_text = procces_file();
+    size_t cnt_lines = calc_lines(raw_text + 1);
 
-	str *text = calloc(cnt_lines, sizeof(str));
-	if (!text) {
-		fprintf(stderr, "%s\n", "Memory allocation failed");
-        exit(EXIT_FAILURE);
+    str *text = procces_raw_text(raw_text + 1, cnt_lines);
+
+    FILE *outp = fopen("output1.txt", "w");
+    if (ferror(outp)) {
+        assert(!"Error while reading the file");
     }
 
-	procces_raw_text(raw_text + 1, text);
+    fprintf(outp,"%s \n", "------Left-Right Sorting------");
 
-	FILE *outp = fopen("output1.txt", "w");
-	if (ferror(outp)) {
-        fprintf(stderr, "%s\n", "Error while opening the file");
-        exit(EXIT_FAILURE);
-    }
+    qsort(text, cnt_lines, sizeof(str), cmp_lr);
+    str_output(outp, text, cnt_lines);
 
-	fprintf(outp,"%s \n", "------Left-Right Sorting------");
+    fprintf(outp,"%s\n", "------Right-Left Sorting------");
 
-	qsort(text, cnt_lines, sizeof(str), cmp_lr);
-	str_output(outp, text, cnt_lines);
+    qsort(text, cnt_lines, sizeof(text[0]), cmp_rl);
+    str_output(outp, text, cnt_lines);
 
-	fprintf(outp,"%s\n", "------Right-Left Sorting------");
+    fprintf(outp,"%s\n", "------Original Text------");
 
-	qsort(text, cnt_lines, sizeof(text[0]), cmp_rl);
-	str_output(outp, text, cnt_lines);
+    print_original_text(outp, raw_text + 1);
 
-	fprintf(outp,"%s\n", "------Original Text------");
+    fclose(outp);
 
-	print_original_text(outp, raw_text + 1);
-
-	fclose(outp);
-
-	free(raw_text);
+    free(raw_text);
     free(text);
 }
 
+
+void print_original_text(FILE *outp, char *tx) {
+    while (*tx) {
+        fputc(*tx, outp);
+        ++tx;
+        if (*tx == '\0') {
+            fputc('\n', outp);
+            ++tx;
+        }
+    }
+}
 
 /*
 -> getFileSize -> getFile -> FileToString -> getLines(\n) ->
